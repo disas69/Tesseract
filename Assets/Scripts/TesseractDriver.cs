@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
+using Assets.Scripts.Utils;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Networking;
@@ -74,12 +74,12 @@ public class TesseractDriver
         return _tesseract?.GetErrorMessage();
     }
 
-    private void CopyAllFilesToPersistentData(List<string> fileNames)
+    private async void CopyAllFilesToPersistentData(List<string> fileNames)
     {
         var fromPath = "jar:file://" + Application.dataPath + "!/assets/";
         var toPath = Application.persistentDataPath + "/";
 
-        Parallel.ForEach(fileNames, fileName =>
+        foreach (var fileName in fileNames)
         {
             if (File.Exists(toPath + fileName))
             {
@@ -89,7 +89,7 @@ public class TesseractDriver
             {
                 using (var uwr = new UnityWebRequest(fromPath + fileName) { downloadHandler = new DownloadHandlerBuffer() })
                 {
-                    uwr.SendWebRequest();
+                    await uwr.SendWebRequest();
 
                     if (uwr.isNetworkError || uwr.isHttpError)
                     {
@@ -103,7 +103,7 @@ public class TesseractDriver
 
                 UnZipData(fileName);
             }
-        });
+        }
     }
 
     private static void UnZipData(string fileName)
