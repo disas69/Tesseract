@@ -17,8 +17,7 @@ public class TesseractDriver
 #if UNITY_EDITOR
         OcrSetup(onSetupComplete);
 #elif UNITY_ANDROID
-        CopyAllFilesToPersistentData(FileNames);
-        OcrSetup(onSetupComplete);
+        CopyAllFilesToPersistentData(FileNames, () => OcrSetup(onSetupComplete));
 #else
         OcrSetup(onSetupComplete);
 #endif
@@ -74,7 +73,7 @@ public class TesseractDriver
         return _tesseract?.GetErrorMessage();
     }
 
-    private async void CopyAllFilesToPersistentData(List<string> fileNames)
+    private async void CopyAllFilesToPersistentData(List<string> fileNames, Action callback)
     {
         var fromPath = "jar:file://" + Application.dataPath + "!/assets/";
         var toPath = Application.persistentDataPath + "/";
@@ -104,6 +103,8 @@ public class TesseractDriver
                 UnZipData(fileName);
             }
         }
+
+        callback?.Invoke();
     }
 
     private static void UnZipData(string fileName)

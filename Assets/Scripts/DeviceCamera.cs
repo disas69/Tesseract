@@ -25,6 +25,11 @@ public class DeviceCamera : MonoBehaviour
             Permission.RequestUserPermission(Permission.Camera);
         }
 #endif
+        TryInitialize();
+    }
+
+    private void TryInitialize()
+    {
         var devices = WebCamTexture.devices;
         if (devices.Length == 0)
         {
@@ -70,6 +75,7 @@ public class DeviceCamera : MonoBehaviour
     {
         if (_cameraTexture == null || !_camAvailable)
         {
+            TryInitialize();
             return;
         }
 

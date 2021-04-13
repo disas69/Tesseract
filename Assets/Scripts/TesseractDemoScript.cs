@@ -2,76 +2,77 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum ButtonState
+public enum ControlsState
 {
-    Ready,
+    Capture,
     Processing,
-    Restart
+    Back
 }
 
 public class TesseractDemoScript : MonoBehaviour
 {
-    private bool _isCapturing;
     private TesseractDriver _tesseractDriver;
 
+    [SerializeField] private Texture2D _texture;
     [SerializeField] private DeviceCamera _deviceCamera;
     [SerializeField] private Text _displayText;
     [SerializeField] private RawImage _output;
-    [SerializeField] private Button _button;
+    [SerializeField] private Button _cameraButton;
+    [SerializeField] private Button _backButton;
+    [SerializeField] private GameObject _loading;
 
     private void Awake()
     {
-        _isCapturing = true;
         _output.gameObject.SetActive(false);
-        _button.onClick.AddListener(OnButtonPressed);
+        _cameraButton.onClick.AddListener(OnCameraButtonPressed);
+        _backButton.onClick.AddListener(OnBackButtonPressed);
 
-        SetButtonState(ButtonState.Processing);
+        SetControlsState(ControlsState.Processing);
 
         _tesseractDriver = new TesseractDriver();
         _tesseractDriver.Setup(() =>
         {
-            SetButtonState(ButtonState.Ready);
+            SetControlsState(ControlsState.Capture);
         });
     }
 
-    private void OnButtonPressed()
+    private void OnCameraButtonPressed()
     {
-        if (_isCapturing)
-        {
-            SetButtonState(ButtonState.Processing);
-            
-            CaptureTexture(texture =>
-            {
-                Recognize(texture);
-                PlayDeviceCamera(false);
-                SetButtonState(ButtonState.Restart);
-            });
-        }
-        else
-        {
-            SetButtonState(ButtonState.Ready);
-            PlayDeviceCamera(true);
-            ClearTextDisplay();
-        }
+        SetControlsState(ControlsState.Processing);
 
-        _isCapturing = !_isCapturing;
+        CaptureTexture(texture =>
+        {
+            Recognize(texture);
+            PlayDeviceCamera(false);
+            SetControlsState(ControlsState.Back);
+        });
     }
 
-    private void SetButtonState(ButtonState state)
+    private void OnBackButtonPressed()
+    {
+        SetControlsState(ControlsState.Capture);
+        PlayDeviceCamera(true);
+        ClearTextDisplay();
+    }
+
+    private void SetControlsState(ControlsState state)
     {
         switch (state)
         {
-            case ButtonState.Ready:
-                _button.interactable = true;
-                _button.GetComponentInChildren<Text>().text = "Capture";
+            case ControlsState.Capture:
+                _cameraButton.gameObject.SetActive(true);
+                _backButton.gameObject.SetActive(false);
+                _loading.gameObject.SetActive(false);
                 break;
-            case ButtonState.Processing:
-                _button.interactable = false;
-                _button.GetComponentInChildren<Text>().text = "Processing...";
+            case ControlsState.Processing:
+                _cameraButton.gameObject.SetActive(false);
+                _backButton.gameObject.SetActive(false);
+                _loading.gameObject.SetActive(true);
                 break;
-            case ButtonState.Restart:
-                _button.interactable = true;
-                _button.GetComponentInChildren<Text>().text = "Continue";
+            case ControlsState.Back:
+                _cameraButton.gameObject.SetActive(false);
+                _backButton.gameObject.SetActive(true);
+                _loading.gameObject.SetActive(false);
                 break;
         }
     }
@@ -92,7 +93,8 @@ public class TesseractDemoScript : MonoBehaviour
 
     private void Recognize(Texture2D texture)
     {
-        AddToTextDisplay(_tesseractDriver.Recognize(texture));
+        var result = _tesseractDriver?.Recognize(texture);
+        AddToTextDisplay(result);
         SetImageDisplay();
     }
 
